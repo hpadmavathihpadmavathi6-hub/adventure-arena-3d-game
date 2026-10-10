@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Adventure Arena 3D</title>
+<style>
+:root{--glass:rgba(11,18,35,.84);--line:rgba(255,255,255,.17);--gold:#ffd45b;--mint:#7cf5b1;--danger:#ff667a;--text:#f6f8ff}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0a1020;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;touch-action:none}#game{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}
+.panel{background:var(--glass);border:1px solid var(--line);box-shadow:0 8px 26px #0005;backdrop-filter:blur(10px);border-radius:15px}
+#topbar{position:fixed;top:10px;left:10px;right:10px;display:flex;align-items:flex-start;gap:8px;z-index:4;pointer-events:none}#topbar>*{pointer-events:auto}
+.brand{padding:10px 12px;min-width:130px}.brand strong{display:block;font-size:14px;letter-spacing:1.4px;color:var(--gold)}.brand small{font-size:10px;opacity:.8}
+.hud{padding:9px 11px;flex:1;min-width:0}.hudrow{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;margin-bottom:5px}.hudrow strong{font-size:12px}.bar{height:9px;background:#ffffff20;border-radius:99px;overflow:hidden;margin-bottom:6px}.bar span{display:block;height:100%;width:100%;border-radius:99px;transition:width .15s}.hpfill{background:linear-gradient(90deg,#ff536f,#ff9871)}.energyfill{background:linear-gradient(90deg,#43cfff,#9b82ff)}.bossfill{background:linear-gradient(90deg,#ff843d,#ff3e68)}#bossHud{display:none;padding:8px 11px;min-width:180px;max-width:240px}#bossHud .bar{margin:5px 0 0}
+#rightTop{display:flex;gap:6px}.chip{padding:9px 10px;font-size:11px;white-space:nowrap}.chip b{color:var(--gold)}
+#leftPanel{position:fixed;top:98px;left:10px;width:220px;padding:12px;z-index:3;max-height:calc(100% - 180px);overflow:auto}#leftPanel h3{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin:0 0 8px}.missionName{font-size:14px;font-weight:800;margin-bottom:4px}.muted{font-size:11px;line-height:1.4;opacity:.8}.objective{font-size:12px;line-height:1.4;margin:8px 0;color:#fff}.row{display:flex;gap:6px;align-items:center}.row>*{min-width:0;flex:1}
+select,button{font:inherit;color:var(--text);border:1px solid var(--line);background:#18243d;border-radius:9px;padding:8px 9px;outline:none}select{width:100%;font-size:11px;margin:4px 0 6px}option{background:#142039}button{cursor:pointer;touch-action:manipulation;font-weight:700;font-size:11px;transition:transform .08s,filter .12s}button:active{transform:scale(.97);filter:brightness(1.2)}button.primary{background:linear-gradient(135deg,#f7bd46,#ff8b48);color:#241606;border:0}button.green{background:linear-gradient(135deg,#66e9ae,#1eac86);color:#062d22;border:0}button:disabled{opacity:.45;cursor:default}.smallbtn{font-size:10px;padding:7px}
+.separator{height:1px;background:var(--line);margin:10px 0}.miniLabel{font-size:10px;opacity:.7;margin:2px 0 1px}.upgradeRow{display:flex;justify-content:space-between;align-items:center;font-size:11px;margin:6px 0}.upgradeRow button{padding:6px;font-size:10px}
+#status{position:fixed;top:98px;left:50%;transform:translateX(-50%);z-index:3;padding:8px 13px;max-width:min(480px,54vw);text-align:center;font-size:12px;font-weight:750;pointer-events:none}
+#bottomBar{position:fixed;right:12px;bottom:12px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;z-index:4}
+#actionButtons{display:flex;gap:8px;align-items:flex-end}.action{width:66px;height:66px;border-radius:50%;border:2px solid #ffffff55;background:linear-gradient(145deg,#f65f7d,#a52155);box-shadow:0 6px 18px #0007;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:22px;user-select:none}.action span{font-size:10px;letter-spacing:.5px}.action.jump{width:55px;height:55px;background:linear-gradient(145deg,#67d8ff,#3268cb);font-size:19px}.action.special{width:61px;height:61px;background:linear-gradient(145deg,#b38aff,#633cce)}
+#dpad{position:fixed;left:14px;bottom:17px;z-index:4;width:145px;height:128px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:5px}#dpad button{border-radius:13px;background:rgba(14,24,44,.82);font-size:18px;border-color:#ffffff35;box-shadow:0 4px 9px #0003;user-select:none}#up{grid-column:2;grid-row:1}#left{grid-column:1;grid-row:2}#down{grid-column:2;grid-row:2}#right{grid-column:3;grid-row:2}#hint{font-size:10px;opacity:.75;text-align:right;max-width:300px;text-shadow:0 2px 4px #000}
+#toast{position:fixed;left:50%;bottom:155px;transform:translateX(-50%);z-index:9;padding:9px 14px;border-radius:12px;background:#111b30eF;border:1px solid #ffffff25;font-weight:700;font-size:12px;opacity:0;transition:opacity .2s;pointer-events:none;text-align:center;max-width:90vw}#toast.show{opacity:1}
+#menu{position:fixed;inset:0;display:none;place-items:center;z-index:8;background:#050914b8;padding:15px}#menuCard{width:min(440px,95vw);padding:20px;text-align:center}#menuCard h1{margin:0 0 7px;color:var(--gold);font-size:26px}#menuCard p{font-size:13px;line-height:1.5;opacity:.88}#menuActions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}#menuActions button{min-width:135px;padding:11px}
+@media(max-width:800px){#topbar{gap:5px;top:6px;left:6px;right:6px}.brand{min-width:103px;padding:8px}.brand strong{font-size:12px}.brand small{font-size:9px}.hud{padding:8px}.hudrow{font-size:10px}.chip{padding:8px;font-size:10px}#bossHud{position:fixed;top:76px;left:50%;transform:translateX(-50%);width:220px;min-width:0}#leftPanel{top:86px;left:6px;width:174px;padding:9px;max-height:calc(100% - 240px)}#leftPanel h3{font-size:10px}.missionName{font-size:12px}.muted,.objective{font-size:10px}#status{top:87px;left:auto;right:6px;transform:none;max-width:calc(100vw - 192px);font-size:10px;padding:7px 8px}#rightTop{gap:4px}.chip:nth-child(2){display:none}#dpad{left:7px;bottom:8px;width:125px;height:112px;gap:4px}#dpad button{font-size:16px;padding:4px}#bottomBar{right:8px;bottom:9px}#actionButtons{gap:6px}.action{width:57px;height:57px;font-size:19px}.action span{font-size:9px}.action.jump{width:48px;height:48px}.action.special{width:54px;height:54px}#hint{font-size:9px;max-width:230px}#toast{bottom:132px}}
+@media(max-height:570px){#leftPanel{max-height:calc(100% - 150px);top:82px}#dpad{height:93px;width:112px}#bottomBar{bottom:6px}#actionButtons .action{width:49px;height:49px}#actionButtons .action.jump{width:42px;height:42px}#actionButtons .action.special{width:46px;height:46px}#status{top:78px}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="topbar">
+  <div class="brand panel"><strong>ADVENTURE ARENA</strong><small>3D HERO QUEST</small></div>
+  <div class="hud panel">
+    <div class="hudrow"><strong id="heroLabel">RANGER · LEVEL 1</strong><span id="hpText">100 / 100 HP</span></div>
+    <div class="bar"><span id="hpFill" class="hpfill"></span></div>
+    <div class="hudrow"><span>Special energy</span><span id="energyText">0%</span></div>
+    <div class="bar" style="margin-bottom:0"><span id="energyFill" class="energyfill" style="width:0%"></span></div>
+  </div>
+  <div id="bossHud" class="panel"><div class="hudrow"><strong id="bossName">BOSS</strong><span id="bossHpText">100%</span></div><div class="bar"><span id="bossFill" class="bossfill"></span></div></div>
+  <div id="rightTop"><div class="chip panel">🪙 <b id="coinCount">0</b></div><div class="chip panel">🏆 <b id="winsCount">0</b></div></div>
+</div>
+<aside id="leftPanel" class="panel">
+  <h3>✦ Current mission</h3><div id="missionName" class="missionName">Forest Rescue</div><div id="missionMap" class="muted">FOREST OUTPOST</div>
+  <div id="objective" class="objective">Defeat enemies and collect gold.</div><div id="missionProgress" class="muted">Enemies: 0/3 · Coins: 0/3</div>
+  <div class="separator"></div><h3>Choose your hero</h3>
+  <select id="heroSelect" aria-label="Choose hero"></select><button id="heroAction" class="smallbtn green">Use / Unlock Hero</button>
+  <div class="miniLabel">Costume</div><select id="costumeSelect" aria-label="Choose costume"></select><button id="costumeAction" class="smallbtn">Equip / Unlock Costume</button>
+  <div class="miniLabel">Weapon</div><select id="weaponSelect" aria-label="Choose weapon"></select><button id="weaponAction" class="smallbtn">Equip / Unlock Weapon</button>
+  <div class="separator"></div><h3>Upgrades</h3>
+  <div class="upgradeRow"><span>⚔️ Power <b id="powerLevel">1</b></span><button id="powerButton">+ Power · 60🪙</button></div>
+  <div class="upgradeRow"><span>❤️ Vitality <b id="vitalityLevel">1</b></span><button id="vitalityButton">+ Health · 60🪙</button></div>
+  <div class="separator"></div><div class="row"><button id="restartButton" class="smallbtn">↻ Restart</button><button id="giftButton" class="smallbtn">🎁 Daily gift</button></div>
+</aside>
+<div id="status" class="panel">Explore the arena. Defeat enemies!</div>
+<div id="dpad"><button id="up" aria-label="Move forward">▲</button><button id="left" aria-label="Move left">◀</button><button id="down" aria-label="Move backward">▼</button><button id="right" aria-label="Move right">▶</button></div>
+<div id="bottomBar"><div id="actionButtons"><button id="jumpButton" class="action jump" aria-label="Jump">↟<span>JUMP</span></button><button id="specialButton" class="action special" aria-label="Special attack">✦<span>SPECIAL</span></button><button id="attackButton" class="action" aria-label="Attack">⚔<span>ATTACK</span></button></div><div id="hint">Move: WASD / arrows · Jump: Space · Attack: J · Special: K</div></div>
+<div id="toast"></div>
+<div id="menu"><div id="menuCard" class="panel"><h1 id="menuTitle">Mission complete!</h1><p id="menuText">Great work, hero.</p><div id="menuActions"><button id="menuMain" class="primary">Next Mission →</button><button id="menuSecondary">Continue playing</button></div></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+if (!window.THREE) { $('status').textContent = '3D engine could not load. Please connect to the internet and reload.'; return; }
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rand=(a,b)=>a+Math.random()*(b-a);
+const HEROES={
+ Ranger:{cost:0,color:0x4abf81,skin:0xf0bd91,hp:100,damage:18,speed:6.5,desc:'Balanced adventurer'},
+ Knight:{cost:100,color:0x6384d7,skin:0xe5b58b,hp:130,damage:22,speed:5.5,desc:'Heavy armor and high health'},
+ Ninja:{cost:120,color:0x383a63,skin:0xc98d6e,hp:85,damage:25,speed:8.2,desc:'Quick and powerful strikes'},
+ Mage:{cost:160,color:0x925de0,skin:0xe9bd9b,hp:90,damage:21,speed:6.1,desc:'Magic-infused attacks'},
+ 'Dragon Hero':{cost:250,color:0xd94d45,skin:0xf3c49d,hp:120,damage:29,speed:6.6,desc:'Legendary dragon armor'}
+};
+const COSTUMES={Classic:{cost:0,armor:0x4abf81,trim:0xe1d9bc},'Shadow Armor':{cost:80,armor:0x242a42,trim:0x9b75f8},'Royal Gold':{cost:130,armor:0xb77925,trim:0xffe07a},'Ember Guardian':{cost:180,armor:0x8e2c30,trim:0xff8b43},'Frost Knight':{cost:180,armor:0x6ec4dd,trim:0xe1fcff}};
+const WEAPONS={Sword:{cost:0,damage:1.0},Axe:{cost:80,damage:1.15},'Twin Daggers':{cost:110,damage:1.08},Staff:{cost:100,damage:1.12},'Dragon Blade':{cost:220,damage:1.35}};
+const MAPS={
+ 'Forest Outpost':{bg:0x91c9e3,fog:0x91c9e3,ground:0x456c47,accent:0x2c583b,kind:'forest'},
+ 'Sunset Desert':{bg:0xeebc86,fog:0xeebc86,ground:0xc89a58,accent:0x94643a,kind:'desert'},
+ 'Frozen Peaks':{bg:0xb8dff2,fog:0xb8dff2,ground:0x8bc2d5,accent:0xdef8ff,kind:'ice'},
+ 'Lava Fortress':{bg:0x351a30,fog:0x4c2633,ground:0x372e37,accent:0xff672f,kind:'lava'},
+ 'Sky Temple':{bg:0x8abce8,fog:0x8abce8,ground:0x8c9fa6,accent:0xf7da8a,kind:'sky'}
+};
+const MISSIONS=[
+ {name:'Forest Rescue',map:'Forest Outpost',description:'Clear the outpost and gather its lost gold.',enemies:3,coins:3,boss:false,reward:70},
+ {name:'Desert Coin Run',map:'Sunset Desert',description:'Defeat the raiders and gather 5 gold coins.',enemies:4,coins:5,boss:false,reward:100},
+ {name:'Frost Warden',map:'Frozen Peaks',description:'Find the ancient coins and defeat the Frost Warden.',enemies:2,coins:4,boss:true,reward:160},
+ {name:'Lava Relics',map:'Lava Fortress',description:'Survive the fortress, defeat its guards, and collect relic coins.',enemies:5,coins:6,boss:false,reward:190},
+ {name:'Sky Temple Champion',map:'Sky Temple',description:'Collect temple treasures and defeat the Sky Champion.',enemies:2,coins:6,boss:true,reward:260}
+];
+let saved={coins:0,wins:0,level:1,unlockedHeroes:['Ranger'],unlockedCostumes:['Classic'],unlockedWeapons:['Sword'],hero:'Ranger',costume:'Classic',weapon:'Sword',power:1,vitality:1,lastGift:'',mission:0};
+try{const old=JSON.parse(localStorage.getItem('adventureArena3DSave')||'null');if(old&&typeof old==='object')saved={...saved,...old};}catch(e){}
+function normalizeSave(){if(!Array.isArray(saved.unlockedHeroes))saved.unlockedHeroes=['Ranger'];if(!Array.isArray(saved.unlockedCostumes))saved.unlockedCostumes=['Classic'];if(!Array.isArray(saved.unlockedWeapons))saved.unlockedWeapons=['Sword'];for(const [key,arr] of [['unlockedHeroes',Object.keys(HEROES)],['unlockedCostumes',Object.keys(COSTUMES)],['unlockedWeapons',Object.keys(WEAPONS)]])saved[key]=[...new Set(saved[key].filter(x=>arr.includes(x)))];if(!saved.unlockedHeroes.includes('Ranger'))saved.unlockedHeroes.unshift('Ranger');if(!saved.unlockedCostumes.includes('Classic'))saved.unlockedCostumes.unshift('Classic');if(!saved.unlockedWeapons.includes('Sword'))saved.unlockedWeapons.unshift('Sword');if(!HEROES[saved.hero]||!saved.unlockedHeroes.includes(saved.hero))saved.hero='Ranger';if(!COSTUMES[saved.costume]||!saved.unlockedCostumes.includes(saved.costume))saved.costume='Classic';if(!WEAPONS[saved.weapon]||!saved.unlockedWeapons.includes(saved.weapon))saved.weapon='Sword';saved.mission=clamp(Number(saved.mission)||0,0,100000);saved.coins=Math.max(0,Number(saved.coins)||0);saved.wins=Math.max(0,Number(saved.wins)||0);saved.power=Math.max(1,Number(saved.power)||1);saved.vitality=Math.max(1,Number(saved.vitality)||1);saved.level=Math.max(1,Number(saved.level)||1)}normalizeSave();
+function save(){try{localStorage.setItem('adventureArena3DSave',JSON.stringify(saved));}catch(e){}}
+let scene,camera,renderer,clock;
+try{scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.1,160);renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.8));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputEncoding=THREE.sRGBEncoding;$('game').appendChild(renderer.domElement);clock=new THREE.Clock();}catch(e){$('status').textContent='This device could not start WebGL 3D graphics. Try a recent Chrome browser.';return;}
+scene.background=new THREE.Color(0x91c9e3);scene.fog=new THREE.Fog(0x91c9e3,28,78);
+scene.add(new THREE.HemisphereLight(0xe4f3ff,0x293147,1.25));const sun=new THREE.DirectionalLight(0xffffff,1.6);sun.position.set(-10,18,10);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-23;sun.shadow.camera.right=23;sun.shadow.camera.top=23;sun.shadow.camera.bottom=-23;scene.add(sun);
+const mats={};function mat(color,roughness=.72,metalness=0){const key=[color,roughness,metalness].join(':');if(!mats[key])mats[key]=new THREE.MeshStandardMaterial({color,roughness,metalness});return mats[key]}
+function addMesh(parent,geometry,material,pos,scale){const m=new THREE.Mesh(geometry,material);if(pos)m.position.set(pos[0],pos[1],pos[2]);if(scale)m.scale.set(scale[0],scale[1],scale[2]);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
+const sphereGeo=new THREE.SphereGeometry(1,16,12), cylGeo=new THREE.CylinderGeometry(.5,.5,1,10), coneGeo=new THREE.ConeGeometry(1,1,9), boxGeo=new THREE.BoxGeometry(1,1,1);
+let ground,decor=[],coins=[],enemies=[],player,missionIndex=0,missionDone=false,gameOver=false,coinCollected=0,enemiesDefeated=0,bossDefeated=false,energy=0,attackTimer=0,specialTimer=0,jumpVelocity=0,onGround=true,playerInvuln=0,toastTimer=0,menuShown=false,activeHeroChoice=saved.hero,activeCostumeChoice=saved.costume,activeWeaponChoice=saved.weapon;
+const held=new Set();
+function makeFighter({hero='Ranger',enemy=false,boss=false,level=1}){
+ const group=new THREE.Group();group.name=enemy?(boss?'Boss':'Enemy'):hero;scene.add(group);
+ const spec=enemy?{color:boss?0xb42e42:0xb75a4a,skin:0xc18a6e,hp:boss?360+missionIndex*45:42+missionIndex*5,damage:boss?17:7,speed:boss?2.1:2.7}:{...HEROES[hero]};
+ const outfit=enemy?{armor:boss?0x6d1d2c:0x5b3941,trim:boss?0xff5b55:0xb58b63}:COSTUMES[saved.costume];
+ if(!enemy){spec.hp=spec.hp+((saved.vitality-1)*18);spec.damage=spec.damage+(saved.power-1)*4;spec.hp=Math.max(spec.hp,1)}
+ const scale=boss?1.42:(enemy?.84:1);group.scale.setScalar(scale);
+ const model=new THREE.Group();group.add(model);
+ const bodyMat=mat(enemy?spec.color:outfit.armor),trimMat=mat(enemy?(boss?0xff7766:0x9f6c55):outfit.trim),skinMat=mat(spec.skin),darkMat=mat(0x263142),bootMat=mat(enemy?0x352e36:outfit.armor),goldMat=mat(0xffd35c,.35,.45);
+ const torso=addMesh(model,new THREE.BoxGeometry(.72,.74,.38),bodyMat,[0,1.22,0]);
+ addMesh(model,boxGeo,trimMat,[0,1.38,-.202],[.6,.13,.03]);
+ const belt=addMesh(model,boxGeo,trimMat,[0,.9,0],[.76,.12,.42]);
+ const head=addMesh(model,sphereGeo,skinMat,[0,1.9,0],[.28,.31,.28]);
+ addMesh(model,sphereGeo,darkMat,[-.1,1.95,-.249],[.035,.04,.018]);addMesh(model,sphereGeo,darkMat,[.1,1.95,-.249],[.035,.04,.018]);
+ if(!enemy&&hero==='Mage'){addMesh(model,coneGeo,bodyMat,[0,2.35,0],[.38,.5,.38]);addMesh(model,coneGeo,trimMat,[0,2.1,0],[.47,.12,.47]);}
+ else if(!enemy&&hero==='Ninja'){addMesh(model,boxGeo,bodyMat,[0,2.06,-.12],[.58,.19,.44]);addMesh(model,boxGeo,trimMat,[0,1.98,-.265],[.42,.055,.025]);}
+ else if(!enemy&&hero==='Dragon Hero'){addMesh(model,coneGeo,trimMat,[-.18,2.25,0],[.12,.33,.12]);addMesh(model,coneGeo,trimMat,[.18,2.25,0],[.12,.33,.12]);const wingMat=mat(0x7a202a);addMesh(model,boxGeo,wingMat,[-.53,1.45,.08],[.42,.65,.12]).rotation.z=-.45;addMesh(model,boxGeo,wingMat,[.53,1.45,.08],[.42,.65,.12]).rotation.z=.45;}
+ else if(!enemy){addMesh(model,boxGeo,trimMat,[0,2.08,0],[.48,.14,.48]);}
+ else {addMesh(model,coneGeo,trimMat,[-.17,2.2,0],[.13,.28,.13]);addMesh(model,coneGeo,trimMat,[.17,2.2,0],[.13,.28,.13]);}
+ const leftArm=new THREE.Group();leftArm.position.set(-.45,1.55,0);model.add(leftArm);addMesh(leftArm,cylGeo,bodyMat,[0,-.28,0],[.16,.62,.16]);addMesh(leftArm,sphereGeo,trimMat,[0,-.57,0],[.13,.13,.13]);
+ const rightArm=new THREE.Group();rightArm.position.set(.45,1.55,0);model.add(rightArm);addMesh(rightArm,cylGeo,bodyMat,[0,-.28,0],[.16,.62,.16]);addMesh(rightArm,sphereGeo,trimMat,[0,-.57,0],[.13,.13,.13]);
+ const leftLeg=new THREE.Group();leftLeg.position.set(-.21,.85,0);model.add(leftLeg);addMesh(leftLeg,cylGeo,bootMat,[0,-.29,0],[.19,.59,.2]);addMesh(leftLeg,boxGeo,darkMat,[0,-.57,-.07],[.22,.16,.34]);
+ const rightLeg=new THREE.Group();rightLeg.position.set(.21,.85,0);model.add(rightLeg);addMesh(rightLeg,cylGeo,bootMat,[0,-.29,0],[.19,.59,.2]);addMesh(rightLeg,boxGeo,darkMat,[0,-.57,-.07],[.22,.16,.34]);
+ const weapon=new THREE.Group();weapon.position.set(0,-.56,-.17);rightArm.add(weapon);
+ const activeWeapon=enemy?'Claws':saved.weapon;
+ if(activeWeapon==='Axe'){
+  addMesh(weapon,cylGeo,mat(0x6c452f),[0,-.15,0],[.055,.8,.055]);addMesh(weapon,boxGeo,mat(0xbecbd9,.38,.65),[.13,.17,0],[.32,.28,.09]);addMesh(weapon,coneGeo,mat(0xbecbd9,.38,.65),[.29,.17,0],[.16,.28,.09]).rotation.z=-Math.PI/2;
+ } else if(activeWeapon==='Staff'){
+  addMesh(weapon,cylGeo,mat(0x70482d),[0,-.05,0],[.06,1.1,.06]);addMesh(weapon,sphereGeo,mat(0x7bdbff,.22,.25),[0,.55,0],[.19,.19,.19]);
+ } else if(activeWeapon==='Twin Daggers'){
+  addMesh(weapon,cylGeo,mat(0x59402b),[0,-.12,0],[.055,.42,.055]);addMesh(weapon,coneGeo,mat(0xd3e7ee,.27,.65),[0,.17,0],[.085,.36,.06]);
+  const off=new THREE.Group();off.position.set(-.75,.05,.15);leftArm.add(off);addMesh(off,cylGeo,mat(0x59402b),[0,-.12,0],[.05,.42,.05]);addMesh(off,coneGeo,mat(0xd3e7ee,.27,.65),[0,.17,0],[.08,.36,.06]);
+ } else {
+  addMesh(weapon,cylGeo,mat(0x6b452c),[0,-.12,0],[.055,.4,.055]);addMesh(weapon,boxGeo,mat(activeWeapon==='Dragon Blade'?0xff785f:0xe2edf6,.25,.72),[0,.18,0],[.14,.55,.045]);addMesh(weapon,boxGeo,goldMat,[0,-.02,0],[.25,.06,.07]);addMesh(weapon,sphereGeo,goldMat,[0,-.22,0],[.08,.08,.08]);
+ }
+ const shadow=addMesh(group,new THREE.CircleGeometry(.55,20),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.22,depthWrite:false}),[0,.025,0]);shadow.rotation.x=-Math.PI/2;shadow.castShadow=false;
+ return {group,model,torso,head,leftArm,rightArm,leftLeg,rightLeg,weapon,shadow,hp:spec.hp,maxHp:spec.hp,damage:spec.damage,speed:spec.speed||3,enemy,boss,dead:false,attackCooldown:rand(.3,1.3),anim:rand(0,6),hurt:0};
+}
+function removeEntity(e){if(e&&e.group){scene.remove(e.group);e.group.traverse(o=>{if(o.geometry&&o.geometry!==sphereGeo&&o.geometry!==cylGeo&&o.geometry!==coneGeo&&o.geometry!==boxGeo)o.geometry.dispose();});}}
+function clearObjects(){for(const e of enemies)removeEntity(e);for(const c of coins)removeEntity(c);for(const d of decor){scene.remove(d);if(d.geometry&&d.geometry.dispose)d.geometry.dispose()}enemies=[];coins=[];decor=[];if(ground){scene.remove(ground);ground.geometry.dispose();ground=null;}}
+function createTree(x,z,ice=false){const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);const trunk=addMesh(g,cylGeo,mat(ice?0x7ba6b9:0x60442b),[0,.9,0],[ice?.18:.24,1.8,ice?.18:.24]);if(ice){for(let i=0;i<3;i++)addMesh(g,coneGeo,mat(0xbde8f6),[0,1.8+i*.45,0],[.8-i*.14,.9,.8-i*.14]);}else{for(let i=0;i<3;i++)addMesh(g,coneGeo,mat(i===1?0x34704a:0x2f6240),[0,1.4+i*.5,0],[1.15-i*.17,1.1,.95-i*.12]);}decor.push(g);}
+function createRock(x,z,color,size=1){const r=addMesh(scene,new THREE.DodecahedronGeometry(size,0),mat(color),[x,size*.45,z],[1.15,.72,1]);r.rotation.set(rand(0,1),rand(0,3),rand(0,1));decor.push(r);}
+function createMap(mapName){clearObjects();const conf=MAPS[mapName]||MAPS['Forest Outpost'];scene.background.setHex(conf.bg);scene.fog.color.setHex(conf.fog);scene.fog.near=25;scene.fog.far=75;
+ ground=addMesh(scene,new THREE.PlaneGeometry(64,64),mat(conf.ground),[0,-.13,0]);ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;
+ const disk=addMesh(scene,new THREE.CylinderGeometry(15,15,.12,64),mat(conf.accent),[0,-.04,0]);disk.receiveShadow=true;decor.push(disk);
+ // Arena perimeter stones and biome props.
+ for(let i=0;i<26;i++){const a=(i/26)*Math.PI*2;const x=Math.cos(a)*16,z=Math.sin(a)*16;if(conf.kind==='forest')createTree(x,z,false);else if(conf.kind==='ice')createTree(x,z,true);else if(conf.kind==='desert'){createRock(x,z,0xd8b474,rand(.7,1.5));if(i%4===0){const c=addMesh(scene,cylGeo,mat(0x3c915e),[x,.6,z],[.18,1.2,.18]);decor.push(c)}}else if(conf.kind==='lava'){createRock(x,z,0x4d3c43,rand(.75,1.5));if(i%3===0){const glow=addMesh(scene,new THREE.DodecahedronGeometry(.8,0),new THREE.MeshStandardMaterial({color:0xff4a20,emissive:0xe92c0c,emissiveIntensity:1.2}),[x,.25,z],[1.7,.25,1.2]);decor.push(glow)}}else{const pillar=addMesh(scene,boxGeo,mat(i%2?0xadbcc9:0xe0c98e),[x,1,z],[1.1,2,1.1]);decor.push(pillar)}}
+ for(let i=0;i<15;i++){const x=rand(-13,13),z=rand(-13,13);if(Math.abs(x)<4&&Math.abs(z)<5)continue;if(conf.kind==='forest')createTree(x,z,false);else if(conf.kind==='ice')createRock(x,z,0xd2f4ff,rand(.35,.8));else if(conf.kind==='desert')createRock(x,z,0xd8b474,rand(.35,.9));else if(conf.kind==='lava')createRock(x,z,0x48323b,rand(.4,1));else createRock(x,z,0xb3c6d5,rand(.3,.7));}
+ // Temple/fortress focal structure
+ if(conf.kind==='sky'||conf.kind==='lava'){for(let s of [-1,1]){const p=addMesh(scene,boxGeo,mat(conf.kind==='sky'?0xe8d6a4:0x4d2b39),[s*5,1,-10],[1.15,2,1.15]);decor.push(p);}const gate=addMesh(scene,boxGeo,mat(conf.accent),[0,2,-10],[8,.28,.45]);decor.push(gate)}
+}
+function spawnCoin(x,z){const group=new THREE.Group();group.position.set(x,.8,z);scene.add(group);addMesh(group,new THREE.CylinderGeometry(.34,.34,.1,18),mat(0xffc928,.3,.45),[0,0,0]);const rim=addMesh(group,new THREE.TorusGeometry(.3,.045,6,18),mat(0xffef8a,.25,.5),[0,0,0]);rim.rotation.x=Math.PI/2;addMesh(group,new THREE.SphereGeometry(.08,8,8),mat(0xffffff,.2),[0,.09,0]);coins.push({group,baseY:.8,phase:rand(0,6),collected:false});}
+function spawnEnemy(x,z,boss=false){const e=makeFighter({enemy:true,boss,level:missionIndex+1});e.group.position.set(x,0,z);e.hpBar=document.createElement('div');e.group.rotation.y=Math.PI;e.spawnX=x;e.spawnZ=z;enemies.push(e);return e;}
+function createPlayer(){if(player)removeEntity(player);player=makeFighter({hero:saved.hero});player.group.position.set(0,0,7);player.group.rotation.y=0;player.hp=player.maxHp;}
+function refreshPlayer(fullHeal=true){const old=player?player.group.position.clone():new THREE.Vector3(0,0,7);if(player)removeEntity(player);player=makeFighter({hero:saved.hero});player.group.position.copy(old);if(fullHeal)player.hp=player.maxHp;playerInvuln=0;syncUI();}
+function startMission(){missionIndex=saved.mission%MISSIONS.length;const m=MISSIONS[missionIndex];missionDone=false;gameOver=false;menuShown=false;coinCollected=0;enemiesDefeated=0;bossDefeated=false;energy=0;attackTimer=0;specialTimer=0;jumpVelocity=0;onGround=true;held.clear();$('menu').style.display='none';createMap(m.map);if(!player)createPlayer();else{player.group.position.set(0,0,7);player.group.rotation.y=0;player.hp=player.maxHp;}
+ const normalCount=m.enemies;for(let i=0;i<normalCount;i++){const x=(i-(normalCount-1)/2)*2.4+rand(-.45,.45),z=-4-rand(0,4);spawnEnemy(x,z,false)}
+ if(m.boss){const b=spawnEnemy(0,-7,true);b.boss=true;}
+ const count=m.coins+Math.max(2,Math.ceil(m.coins*.45));for(let i=0;i<count;i++){let x=rand(-10,10),z=rand(-10,5);if(Math.abs(x)<2&&z>3)z-=5;spawnCoin(x,z)}
+ $('missionName').textContent=m.name;$('missionMap').textContent=m.map.toUpperCase();$('objective').textContent=m.description;$('restartButton').textContent='↻ Restart';$('status').textContent='Mission started · collect gold and fight!';$('bossHud').style.display=m.boss?'block':'none';if(m.boss){$('bossName').textContent=m.map==='Frozen Peaks'?'FROST WARDEN':'SKY CHAMPION'}syncUI();toast('Mission: '+m.name);save();}
+function currentMission(){return MISSIONS[missionIndex%MISSIONS.length]}
+function showToast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');toastTimer=2.4;}
+function syncUI(){if(!player)return;const hp=clamp(player.hp,0,player.maxHp),en=clamp(energy,0,100);$('heroLabel').textContent=saved.hero.toUpperCase()+' · LEVEL '+saved.level;$('hpText').textContent=Math.ceil(hp)+' / '+player.maxHp+' HP';$('hpFill').style.width=(hp/player.maxHp*100)+'%';$('energyText').textContent=Math.round(en)+'%';$('energyFill').style.width=en+'%';$('coinCount').textContent=saved.coins;$('winsCount').textContent=saved.wins;$('powerLevel').textContent=saved.power;$('vitalityLevel').textContent=saved.vitality;
+ const alive=enemies.filter(e=>!e.dead),boss=alive.find(e=>e.boss);if(boss){$('bossHud').style.display='block';$('bossName').textContent=missionIndex===2?'FROST WARDEN':'SKY CHAMPION';$('bossHpText').textContent=Math.ceil(clamp(boss.hp/boss.maxHp,0,1)*100)+'%';$('bossFill').style.width=clamp(boss.hp/boss.maxHp,0,1)*100+'%';}else if(!currentMission().boss||bossDefeated)$('bossHud').style.display='none';
+ $('missionProgress').textContent='Enemies: '+enemiesDefeated+'/'+currentMission().enemies+' · Gold: '+coinCollected+'/'+currentMission().coins+(currentMission().boss?' · Boss: '+(bossDefeated?'defeated':'alive'):'');
+}
+function chooseHeroChoice(){const value=$('heroSelect').value;activeHeroChoice=value;if(!saved.unlockedHeroes.includes(value)){const cost=HEROES[value].cost;$('heroAction').textContent='Unlock · '+cost+' 🪙';showToast(value+' costs '+cost+' coins.');return;}saved.hero=value;activeHeroChoice=value;refreshPlayer();save();showToast(value+' selected!');}
+function heroSelectChanged(){activeHeroChoice=$('heroSelect').value;const unlocked=saved.unlockedHeroes.includes(activeHeroChoice);$('heroAction').textContent=unlocked?'Use Hero':'Unlock · '+HEROES[activeHeroChoice].cost+' 🪙';if(!unlocked)showToast('Unlock '+activeHeroChoice+' to use this hero.');}
+function heroAction(){const h=activeHeroChoice;if(saved.unlockedHeroes.includes(h)){saved.hero=h;refreshPlayer();save();showToast(h+' ready for battle!');}else{const cost=HEROES[h].cost;if(saved.coins<cost){showToast('You need '+cost+' coins to unlock '+h+'.');return;}saved.coins-=cost;saved.unlockedHeroes.push(h);saved.hero=h;refreshPlayer();save();populateSelects();$('heroSelect').value=h;showToast(h+' unlocked!');}}
+function populateSelects(){const fill=(id,obj,unlocked)=>{const el=$(id),old=el.value;el.innerHTML='';for(const [name,info] of Object.entries(obj)){const op=document.createElement('option');op.value=name;op.textContent=name+(unlocked.includes(name)?' ✓':` · ${info.cost} coins`);el.appendChild(op);}el.value=obj[old]?old:Object.keys(obj)[0];};fill('heroSelect',HEROES,saved.unlockedHeroes);fill('costumeSelect',COSTUMES,saved.unlockedCostumes);fill('weaponSelect',WEAPONS,saved.unlockedWeapons);$('heroSelect').value=activeHeroChoice in HEROES?activeHeroChoice:saved.hero;$('costumeSelect').value=activeCostumeChoice in COSTUMES?activeCostumeChoice:saved.costume;$('weaponSelect').value=activeWeaponChoice in WEAPONS?activeWeaponChoice:saved.weapon;$('heroAction').textContent=saved.unlockedHeroes.includes($('heroSelect').value)?'Use Hero':'Unlock · '+HEROES[$('heroSelect').value].cost+' 🪙';$('costumeAction').textContent=saved.unlockedCostumes.includes($('costumeSelect').value)?'Equip Costume':'Unlock · '+COSTUMES[$('costumeSelect').value].cost+' 🪙';$('weaponAction').textContent=saved.unlockedWeapons.includes($('weaponSelect').value)?'Equip Weapon':'Unlock · '+WEAPONS[$('weaponSelect').value].cost+' 🪙';}
+function costumeChanged(){activeCostumeChoice=$('costumeSelect').value;const ok=saved.unlockedCostumes.includes(activeCostumeChoice);$('costumeAction').textContent=ok?'Equip Costume':'Unlock · '+COSTUMES[activeCostumeChoice].cost+' 🪙';if(!ok)showToast(activeCostumeChoice+' requires '+COSTUMES[activeCostumeChoice].cost+' coins.');}
+function costumeAction(){const c=activeCostumeChoice;if(saved.unlockedCostumes.includes(c)){saved.costume=c;refreshPlayer(false);save();showToast(c+' equipped!');}else{const cost=COSTUMES[c].cost;if(saved.coins<cost){showToast('Not enough coins for this costume.');return;}saved.coins-=cost;saved.unlockedCostumes.push(c);saved.costume=c;refreshPlayer(false);save();populateSelects();$('costumeSelect').value=c;showToast('Costume unlocked and equipped!');}}
+function weaponChanged(){activeWeaponChoice=$('weaponSelect').value;const ok=saved.unlockedWeapons.includes(activeWeaponChoice);$('weaponAction').textContent=ok?'Equip Weapon':'Unlock · '+WEAPONS[activeWeaponChoice].cost+' 🪙';if(!ok)showToast(activeWeaponChoice+' costs '+WEAPONS[activeWeaponChoice].cost+' coins.');}
+function weaponAction(){const w=activeWeaponChoice;if(saved.unlockedWeapons.includes(w)){saved.weapon=w;refreshPlayer(false);save();showToast(w+' equipped!');}else{const cost=WEAPONS[w].cost;if(saved.coins<cost){showToast('Not enough coins for this weapon.');return;}saved.coins-=cost;saved.unlockedWeapons.push(w);saved.weapon=w;refreshPlayer(false);save();populateSelects();$('weaponSelect').value=w;showToast(w+' unlocked!');}}
+function spendUpgrade(which){const cost=60+(saved[which]-1)*35;if(saved.coins<cost){showToast('Not enough coins. Find more treasure!');return;}saved.coins-=cost;saved[which]++;refreshPlayer(which==='vitality');save();$('powerButton').textContent='+ Power · '+(60+(saved.power-1)*35)+'🪙';$('vitalityButton').textContent='+ Health · '+(60+(saved.vitality-1)*35)+'🪙';showToast(which==='power'?'Attack power upgraded!':'Maximum health upgraded!');}
+function checkMissionComplete(){const m=currentMission();const enoughCoins=coinCollected>=m.coins;const enoughEnemies=enemiesDefeated>=m.enemies;const enoughBoss=!m.boss||bossDefeated;if(!missionDone&&enoughCoins&&enoughEnemies&&enoughBoss){missionDone=true;saved.coins+=m.reward;saved.wins++;saved.level=Math.max(saved.level,1+Math.floor(saved.wins/2));save();$('status').textContent='MISSION COMPLETE! +' +m.reward+' coins';$('menuTitle').textContent='Mission Complete!';$('menuText').textContent='You earned '+m.reward+' coins. Your hero is stronger — continue to the next adventure!';$('menuMain').textContent='Next Mission →';$('menuSecondary').textContent='Keep Exploring';$('menu').style.display='grid';menuShown=true;showToast('Mission completed! +'+m.reward+' coins');syncUI();}}
+function defeatPlayer(){if(gameOver||missionDone)return;gameOver=true;$('menuTitle').textContent='You were defeated';$('menuText').textContent='Your adventure is not over. Restart this mission to try again.';$('menuMain').textContent='Restart Mission';$('menuSecondary').textContent='Close';$('menu').style.display='grid';menuShown=true;}
+function collectCoin(c){if(c.collected)return;c.collected=true;scene.remove(c.group);saved.coins+=5;coinCollected++;energy=clamp(energy+8,0,100);syncUI();save();checkMissionComplete();}
+function killEnemy(e){if(e.dead)return;e.dead=true;scene.remove(e.group);if(!e.boss)enemiesDefeated++;energy=clamp(energy+18,0,100);saved.coins+=e.boss?35:8;spawnCoin(e.group.position.x+rand(-.6,.6),e.group.position.z+rand(-.6,.6));if(e.boss){bossDefeated=true;showToast('BOSS DEFEATED! +35 coins');}else showToast('Enemy defeated! +8 coins');syncUI();save();checkMissionComplete();}
+function damageEnemy(e,dmg){if(e.dead)return;e.hp-=dmg;e.hurt=.18;e.group.position.x+=Math.sign(e.group.position.x-player.group.position.x)*.2;if(e.hp<=0)killEnemy(e);}
+function faceTarget(a,b){const dx=b.x-a.x,dz=b.z-a.z;a.rotation.y=Math.atan2(dx,-dz);}
+function attack(special=false){if(!player||gameOver||missionDone||attackTimer>0)return;if(special){if(energy<100){showToast('Special needs 100% energy.');return;}energy=0;specialTimer=.75;attackTimer=.55;playerInvuln=.4;showToast('SPECIAL ATTACK!');}else{attackTimer=.36;}
+ const p=player.group.position;const mult=special?2.6:1;let hitCount=0;for(const e of enemies){if(e.dead)continue;const dx=e.group.position.x-p.x,dz=e.group.position.z-p.z,dist=Math.hypot(dx,dz);if(dist<(special?5.7:3.15)){const forwardX=Math.sin(player.group.rotation.y),forwardZ=-Math.cos(player.group.rotation.y);const dot=(dx*forwardX+dz*forwardZ)/(dist||1);if(special||dot>.05){let dmg=player.damage*WEAPONS[saved.weapon].damage*mult;if(saved.hero==='Mage'&&special)dmg*=1.2;damageEnemy(e,dmg);hitCount++;}}}
+ if(hitCount>0&&!special)energy=clamp(energy+hitCount*9,0,100);if(special){for(let i=0;i<14;i++){const a=(i/14)*Math.PI*2;const puff=addMesh(scene,new THREE.SphereGeometry(.11,6,6),new THREE.MeshBasicMaterial({color:0x8eeaff}),[p.x+Math.cos(a)*2,.5,p.z+Math.sin(a)*2]);decor.push(puff);setTimeout(()=>{scene.remove(puff)},450)}}syncUI();}
+function jump(){if(!player||gameOver||missionDone)return;if(onGround){jumpVelocity=8;onGround=false;}}
+function setHeld(key,on){if(on)held.add(key);else held.delete(key)}
+const controls=[['up','w'],['left','a'],['down','s'],['right','d']];for(const [id,key] of controls){const b=$(id);b.addEventListener('pointerdown',e=>{e.preventDefault();setHeld(key,true);b.setPointerCapture?.(e.pointerId)});const up=e=>{e.preventDefault();setHeld(key,false)};b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('lostpointercapture',()=>setHeld(key,false));}
+$('attackButton').addEventListener('pointerdown',e=>{e.preventDefault();attack(false)});$('specialButton').addEventListener('pointerdown',e=>{e.preventDefault();attack(true)});$('jumpButton').addEventListener('pointerdown',e=>{e.preventDefault();jump()});
+window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if(k==='w'||k==='arrowup')held.add('w');if(k==='s'||k==='arrowdown')held.add('s');if(k==='a'||k==='arrowleft')held.add('a');if(k==='d'||k==='arrowright')held.add('d');if((k===' '||k==='space')&&!e.repeat)jump();if(k==='j'&&!e.repeat)attack(false);if(k==='k'&&!e.repeat)attack(true);});window.addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(k==='w'||k==='arrowup')held.delete('w');if(k==='s'||k==='arrowdown')held.delete('s');if(k==='a'||k==='arrowleft')held.delete('a');if(k==='d'||k==='arrowright')held.delete('d');});window.addEventListener('blur',()=>held.clear());
+$('heroSelect').addEventListener('change',heroSelectChanged);$('heroAction').addEventListener('click',heroAction);$('costumeSelect').addEventListener('change',costumeChanged);$('costumeAction').addEventListener('click',costumeAction);$('weaponSelect').addEventListener('change',weaponChanged);$('weaponAction').addEventListener('click',weaponAction);
+$('powerButton').addEventListener('click',()=>spendUpgrade('power'));$('vitalityButton').addEventListener('click',()=>spendUpgrade('vitality'));
+$('restartButton').addEventListener('click',startMission);$('giftButton').addEventListener('click',()=>{const today=new Date().toISOString().slice(0,10);if(saved.lastGift===today){showToast('Daily gift already claimed. Come back tomorrow!');return;}saved.lastGift=today;saved.coins+=40;save();syncUI();showToast('Daily gift claimed: +40 coins!');});
+$('menuMain').addEventListener('click',()=>{if(gameOver){startMission();return;}saved.mission++;save();startMission();});$('menuSecondary').addEventListener('click',()=>{$('menu').style.display='none';menuShown=false;if(gameOver){showToast('Restart the mission when you are ready.');}});
+function animateFighter(e,dt,moving,time,attacking){e.anim+=dt;const swing=Math.sin(e.anim*10)*.55;const air=e===player&&!onGround?-.35:0;e.leftLeg.rotation.x=moving?swing:Math.sin(e.anim*2)*.03;e.rightLeg.rotation.x=moving?-swing:Math.sin(e.anim*2+1)*.03;e.leftArm.rotation.x=moving?-swing*.65:0;e.rightArm.rotation.x=moving?swing*.55:0;e.torso.rotation.z=moving?Math.sin(e.anim*10)*.035:0;if(e===player){e.rightArm.rotation.x+=attacking?-1.5:0;e.rightArm.rotation.z+=attacking?Math.sin(time*18)*.9:0;e.leftArm.rotation.x+=specialTimer>0?-0.6:0;e.group.position.y=Math.max(0,e.group.position.y);e.model.position.y=air;}else if(attacking){e.rightArm.rotation.x=-.9;}if(e.hurt>0){e.hurt-=dt;e.model.position.x=Math.sin(time*60)*.05;}else e.model.position.x=0;}
+function update(dt,time){if(!player)return;if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)$('toast').classList.remove('show');}attackTimer=Math.max(0,attackTimer-dt);specialTimer=Math.max(0,specialTimer-dt);playerInvuln=Math.max(0,playerInvuln-dt);
+ const p=player.group.position;let dx=(held.has('d')?1:0)-(held.has('a')?1:0),dz=(held.has('s')?1:0)-(held.has('w')?1:0);const mag=Math.hypot(dx,dz);if(mag>0){dx/=mag;dz/=mag;if(!gameOver){p.x+=dx*player.speed*dt;p.z+=dz*player.speed*dt;player.group.rotation.y=Math.atan2(dx,-dz);}}p.x=clamp(p.x,-13,13);p.z=clamp(p.z,-13,13);
+ if(!onGround){p.y+=jumpVelocity*dt;jumpVelocity-=20*dt;if(p.y<=0){p.y=0;onGround=true;jumpVelocity=0;}}if(gameOver||missionDone){p.y=Math.max(0,p.y);}
+ for(const c of coins){if(c.collected)continue;c.group.rotation.y+=dt*1.8;c.group.position.y=c.baseY+Math.sin(time*2.4+c.phase)*.16;if(Math.hypot(c.group.position.x-p.x,c.group.position.z-p.z)<1.25)collectCoin(c);}
+ for(const e of enemies){if(e.dead)continue;const ep=e.group.position;const ex=p.x-ep.x,ez=p.z-ep.z,dist=Math.hypot(ex,ez);e.attackCooldown-=dt;let attacking=false;if(!gameOver&&!missionDone){if(dist>(e.boss?2.15:1.7)){if(dist>.001){const step=Math.min((e.boss?e.speed||2.1:2.8)*dt,dist-(e.boss?2.0:1.45));if(step>0){ep.x+=ex/dist*step;ep.z+=ez/dist*step;}}}faceTarget(e.group,p);if(dist<(e.boss?2.6:1.9)&&e.attackCooldown<=0){attacking=true;e.attackCooldown=e.boss?1.25:1.55;if(playerInvuln<=0){let dmg=e.boss?18:8;dmg=Math.max(3,dmg-(saved.vitality-1)*.35);player.hp-=dmg;playerInvuln=.45;showToast(e.boss?'Boss strike! -'+Math.round(dmg)+' HP':'Hit taken! -'+Math.round(dmg)+' HP');if(player.hp<=0){player.hp=0;defeatPlayer();}}}}
+ animateFighter(e,dt,dist>.15,time,attacking);if(e.boss){e.group.rotation.y=e.group.rotation.y;}}
+ const moving=mag>0&&!gameOver;animateFighter(player,dt,moving,time,attackTimer>0);if(attackTimer>0)player.rightArm.rotation.z=Math.sin(time*22)*.75;
+ // Camera follows behind hero; keep the path readable on phones.
+ const target=new THREE.Vector3(p.x,p.y+1.0,p.z-1.2);camera.position.lerp(new THREE.Vector3(p.x,p.y+6.2,p.z+10.5),1-Math.pow(.001,dt));camera.lookAt(target);camera.position.x=clamp(camera.position.x,-17,17);camera.position.z=clamp(camera.position.z,-8,25);
+ sun.position.set(p.x-10,18,p.z+10);syncUI();}
+function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.8));}window.addEventListener('resize',resize);
+function frame(){requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.04),t=clock.elapsedTime;update(dt,t);renderer.render(scene,camera)}
+populateSelects();$('powerButton').textContent='+ Power · '+(60+(saved.power-1)*35)+'🪙';$('vitalityButton').textContent='+ Health · '+(60+(saved.vitality-1)*35)+'🪙';createPlayer();startMission();frame();
+})();
+</script>
+</body>
+</html>
